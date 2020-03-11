@@ -23,6 +23,8 @@ class AudioTrack extends PureComponent<IAudioTrackProps, IAudioTrackState> {
   private player: Player | null;
   private lastSeek: number;
   private progressInterval: number;
+  private isAndroid: boolean;
+  private isIOS: boolean;
 
   constructor(props: IAudioTrackProps) {
     super(props);
@@ -34,9 +36,11 @@ class AudioTrack extends PureComponent<IAudioTrackProps, IAudioTrackState> {
       viewState: false,
     };
 
-    this.player = null;
+    this.player = new Player(props.filename);
     this.lastSeek = 0;
     this.progressInterval = 0;
+    this.isAndroid = Platform.OS === 'android';
+    this.isIOS = Platform.OS === 'ios';
 
     this.reloadPlayer = this.reloadPlayer.bind(this);
     this.shouldUpdateProgressBar = this.shouldUpdateProgressBar.bind(this);
@@ -47,6 +51,9 @@ class AudioTrack extends PureComponent<IAudioTrackProps, IAudioTrackState> {
   }
 
   public componentDidMount(): void {
+    if (this.isAndroid) {
+      return;
+    }
     this.player = null;
     this.lastSeek = 0;
   }
@@ -74,7 +81,6 @@ class AudioTrack extends PureComponent<IAudioTrackProps, IAudioTrackState> {
 
     this.player.prepare((err) => {
       if (err) {
-        console.log('error at _reloadPlayer():');
         console.log(err);
       }
 
@@ -161,13 +167,15 @@ class AudioTrack extends PureComponent<IAudioTrackProps, IAudioTrackState> {
         <TouchableOpacity onPress={this.setIsTrackPlaying} style={{ alignSelf: 'flex-start', marginBottom: 15 }}>
           <Text>{title}</Text>
         </TouchableOpacity>
-        <Animated.View style={[styles.slider, animatedStyle]}>
-          <Slider
-            step={0.0001}
-            onValueChange={this.seek}
-            value={progress}
-          />
-        </Animated.View>
+        {this.isIOS && (
+          <Animated.View style={[styles.slider, animatedStyle]}>
+            <Slider
+              step={0.0001}
+              onValueChange={this.seek}
+              value={progress}
+            />
+          </Animated.View>
+        )}
       </View>
     );
   }
